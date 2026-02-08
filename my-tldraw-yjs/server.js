@@ -5,6 +5,9 @@ import { setupWSConnection } from 'y-websocket/bin/utils'
 const wss = new WebSocketServer({ port: 1234 })
 
 wss.on('connection', (conn, req) => {
+    // Log the connection URL to confirm path routing
+    console.log(`Connection received: ${req.url}`)
+
     setupWSConnection(conn, req, {
         gc: true,
     })
