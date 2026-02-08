@@ -1,4 +1,4 @@
-import { Tldraw, useEditor } from 'tldraw'
+import { Tldraw } from 'tldraw'
 import { useYjsStore } from './useYjsStore'
 import 'tldraw/tldraw.css'
 import './index.css'
