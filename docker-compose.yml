@@ -10,12 +10,15 @@ services:
     networks:
       - proxy
     volumes:
-      - ./data:/app/.wrangler
+      - ./data:/app/data # Updated to general data folder, or remove if not needed. Let's keep data persistence.
     labels:
       - "traefik.enable=true"
+
+      # Frontend Router (Port 3000)
       - "traefik.http.routers.nexocloud-tablica.rule=Host(`tablica.nexocloud.pl`)"
       - "traefik.http.routers.nexocloud-tablica.entrypoints=websecure"
       - "traefik.http.routers.nexocloud-tablica.tls.certresolver=cf"
+      - "traefik.http.routers.nexocloud-tablica.service=nexocloud-tablica" # EXPICITLY LINK TO SERVICE
       - "traefik.http.services.nexocloud-tablica.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stsseconds=31536000"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stsincludesubdomains=true"
@@ -26,6 +29,9 @@ services:
       - "traefik.http.routers.nexocloud-tablica-ws.rule=Host(`tablica.nexocloud.pl`) && PathPrefix(`/ws`)"
       - "traefik.http.routers.nexocloud-tablica-ws.entrypoints=websecure"
       - "traefik.http.routers.nexocloud-tablica-ws.tls.certresolver=cf"
+      - "traefik.http.routers.nexocloud-tablica-ws.service=nexocloud-tablica-ws" # EXPLICITLY LINK TO SERVICE
+      - "traefik.http.middlewares.nexocloud-tablica-ws-strip.stripprefix.prefixes=/ws"
+      - "traefik.http.routers.nexocloud-tablica-ws.middlewares=nexocloud-tablica-ws-strip"
       - "traefik.http.services.nexocloud-tablica-ws.loadbalancer.server.port=1234"
 
       - "traefik.docker.network=proxy"
