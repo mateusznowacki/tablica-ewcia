@@ -3,7 +3,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY my-tldraw-multiplayer/package.json my-tldraw-multiplayer/package-lock.json ./
+COPY my-tldraw-multiplayer/package.json ./
 
 RUN npm install
 
