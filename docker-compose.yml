@@ -10,7 +10,7 @@ services:
     networks:
       - proxy
     volumes:
-      - ./data:/app/data # Updated to general data folder, or remove if not needed. Let's keep data persistence.
+      - ./data:/app/data
     labels:
       - "traefik.enable=true"
 
@@ -18,21 +18,19 @@ services:
       - "traefik.http.routers.nexocloud-tablica.rule=Host(`tablica.nexocloud.pl`)"
       - "traefik.http.routers.nexocloud-tablica.entrypoints=websecure"
       - "traefik.http.routers.nexocloud-tablica.tls.certresolver=cf"
-      - "traefik.http.routers.nexocloud-tablica.service=nexocloud-tablica" # EXPICITLY LINK TO SERVICE
+      - "traefik.http.routers.nexocloud-tablica.service=nexocloud-tablica"
       - "traefik.http.services.nexocloud-tablica.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stsseconds=31536000"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stsincludesubdomains=true"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stspreload=true"
       - "traefik.http.routers.nexocloud-tablica.middlewares=nexocloud-tablica-hsts@docker"
 
-      # WebSocket Router (Port 1234)
-      - "traefik.http.routers.nexocloud-tablica-ws.rule=Host(`tablica.nexocloud.pl`) && PathPrefix(`/ws`)"
-      - "traefik.http.routers.nexocloud-tablica-ws.entrypoints=websecure"
-      - "traefik.http.routers.nexocloud-tablica-ws.tls.certresolver=cf"
-      - "traefik.http.routers.nexocloud-tablica-ws.service=nexocloud-tablica-ws" # EXPLICITLY LINK TO SERVICE
-      - "traefik.http.middlewares.nexocloud-tablica-ws-strip.stripprefix.prefixes=/ws"
-      - "traefik.http.routers.nexocloud-tablica-ws.middlewares=nexocloud-tablica-ws-strip"
-      - "traefik.http.services.nexocloud-tablica-ws.loadbalancer.server.port=1234"
+      # Sync Server Router (Port 5858) - WebSocket + API
+      - "traefik.http.routers.nexocloud-tablica-api.rule=Host(`tablica.nexocloud.pl`) && (PathPrefix(`/connect`) || PathPrefix(`/uploads`) || PathPrefix(`/unfurl`))"
+      - "traefik.http.routers.nexocloud-tablica-api.entrypoints=websecure"
+      - "traefik.http.routers.nexocloud-tablica-api.tls.certresolver=cf"
+      - "traefik.http.routers.nexocloud-tablica-api.service=nexocloud-tablica-api"
+      - "traefik.http.services.nexocloud-tablica-api.loadbalancer.server.port=5858"
 
       - "traefik.docker.network=proxy"
     healthcheck:

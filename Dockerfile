@@ -1,27 +1,40 @@
 # Build stage
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files
+COPY app/package.json app/package-lock.json* ./
+
+# Install all dependencies (including dev for build)
+RUN npm install
+
+# Copy source code
+COPY app/ .
+
+# Build client
+RUN npm run build
+
+# Production stage
 FROM node:18-alpine
 
 WORKDIR /app
 
-COPY my-tldraw-yjs/package.json ./
+# Install production dependencies
+COPY app/package.json app/package-lock.json* ./
+RUN npm install --omit=dev && npm install -g serve concurrently tsx
 
-# Install dependencies (including production ones)
-RUN npm install
+# Copy built client
+COPY --from=builder /app/dist ./dist
 
-COPY my-tldraw-yjs/ .
+# Copy server source (tsx will run TypeScript directly)
+COPY app/src/server ./src/server
 
-# Build the client for production
-RUN npm run build
+# Create data directories
+RUN mkdir -p /app/data/rooms /app/data/assets
 
-# Expose port for y-websocket server
-EXPOSE 1234
+# Expose ports: 3000 for frontend, 5858 for sync server
+EXPOSE 3000 5858
 
-# We will run both the client preview/server and the websocket server.
-# For simplicity in this starter, we can use a script to launch both or just run the server if it serves the static files.
-# In this specific setup, we'll run the websocket server. To serve the client files, we might need a static file server.
-# Let's use `serve` or similar.
-
-RUN npm install -g serve concurrently
-
-# Serve the client on port 3000 and run the websocket server on port 1234
-CMD ["concurrently", "\"serve -s dist -l 3000\"", "\"node server.js\""]
+# Run both servers
+CMD ["concurrently", "\"tsx src/server/server.ts\"", "\"serve -s dist -l 3000\""]
