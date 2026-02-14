@@ -1,46 +1,70 @@
 version: '3.8'
 
 services:
-  tablica:
+  # Excalidraw Frontend (nginx serving static files)
+  excalidraw:
     build:
-      context: .
+      context: ./excalidraw
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     container_name: nexocloud-tablica
     restart: unless-stopped
     networks:
       - proxy
-    volumes:
-      - ./data:/app/data
+    environment:
+      - VITE_APP_WS_SERVER_URL=https://tablica-ws.nexocloud.pl
+      - VITE_APP_BACKEND_V2_GET_URL=
+      - VITE_APP_BACKEND_V2_POST_URL=
+      - VITE_APP_LIBRARY_URL=https://libraries.excalidraw.com
+      - VITE_APP_LIBRARY_BACKEND=https://us-central1-excalidraw-room-persistence.cloudfunctions.net/libraries
+      - VITE_APP_FIREBASE_CONFIG={}
+      - VITE_APP_ENABLE_TRACKING=false
     labels:
       - "traefik.enable=true"
 
-      # Frontend Router (Port 3000) - priority 1 (lower = fallback)
+      # Frontend Router (Port 80 - nginx)
       - "traefik.http.routers.nexocloud-tablica.rule=Host(`tablica.nexocloud.pl`)"
       - "traefik.http.routers.nexocloud-tablica.entrypoints=websecure"
       - "traefik.http.routers.nexocloud-tablica.tls.certresolver=cf"
-      - "traefik.http.routers.nexocloud-tablica.priority=1"
       - "traefik.http.routers.nexocloud-tablica.service=nexocloud-tablica"
-      - "traefik.http.services.nexocloud-tablica.loadbalancer.server.port=3000"
+      - "traefik.http.services.nexocloud-tablica.loadbalancer.server.port=80"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stsseconds=31536000"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stsincludesubdomains=true"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stspreload=true"
       - "traefik.http.routers.nexocloud-tablica.middlewares=nexocloud-tablica-hsts@docker"
 
-      # Sync Server Router (Port 5858) - priority 10 (higher = matched first)
-      - "traefik.http.routers.nexocloud-tablica-api.rule=Host(`tablica.nexocloud.pl`) && (PathPrefix(`/connect`) || PathPrefix(`/uploads`) || PathPrefix(`/unfurl`))"
-      - "traefik.http.routers.nexocloud-tablica-api.entrypoints=websecure"
-      - "traefik.http.routers.nexocloud-tablica-api.tls.certresolver=cf"
-      - "traefik.http.routers.nexocloud-tablica-api.priority=10"
-      - "traefik.http.routers.nexocloud-tablica-api.service=nexocloud-tablica-api"
-      - "traefik.http.services.nexocloud-tablica-api.loadbalancer.server.port=5858"
-
       - "traefik.docker.network=proxy"
     healthcheck:
-      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/" ]
+      test: [ "CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:80/" ]
       interval: 30s
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  # Collaboration WebSocket Server (excalidraw-room)
+  excalidraw-room:
+    build:
+      context: ./excalidraw-room
+      dockerfile: Dockerfile
+    container_name: nexocloud-tablica-ws
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - PORT=80
+      - CORS_ORIGIN=https://tablica.nexocloud.pl
+    labels:
+      - "traefik.enable=true"
+
+      # WebSocket Router
+      - "traefik.http.routers.nexocloud-tablica-ws.rule=Host(`tablica-ws.nexocloud.pl`)"
+      - "traefik.http.routers.nexocloud-tablica-ws.entrypoints=websecure"
+      - "traefik.http.routers.nexocloud-tablica-ws.tls.certresolver=cf"
+      - "traefik.http.routers.nexocloud-tablica-ws.service=nexocloud-tablica-ws"
+      - "traefik.http.services.nexocloud-tablica-ws.loadbalancer.server.port=80"
+
+      - "traefik.docker.network=proxy"
 
 networks:
   proxy:
