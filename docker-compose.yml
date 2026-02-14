@@ -14,10 +14,11 @@ services:
     labels:
       - "traefik.enable=true"
 
-      # Frontend Router (Port 3000)
+      # Frontend Router (Port 3000) - priority 1 (lower = fallback)
       - "traefik.http.routers.nexocloud-tablica.rule=Host(`tablica.nexocloud.pl`)"
       - "traefik.http.routers.nexocloud-tablica.entrypoints=websecure"
       - "traefik.http.routers.nexocloud-tablica.tls.certresolver=cf"
+      - "traefik.http.routers.nexocloud-tablica.priority=1"
       - "traefik.http.routers.nexocloud-tablica.service=nexocloud-tablica"
       - "traefik.http.services.nexocloud-tablica.loadbalancer.server.port=3000"
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stsseconds=31536000"
@@ -25,10 +26,11 @@ services:
       - "traefik.http.middlewares.nexocloud-tablica-hsts.headers.stspreload=true"
       - "traefik.http.routers.nexocloud-tablica.middlewares=nexocloud-tablica-hsts@docker"
 
-      # Sync Server Router (Port 5858) - WebSocket + API
+      # Sync Server Router (Port 5858) - priority 10 (higher = matched first)
       - "traefik.http.routers.nexocloud-tablica-api.rule=Host(`tablica.nexocloud.pl`) && (PathPrefix(`/connect`) || PathPrefix(`/uploads`) || PathPrefix(`/unfurl`))"
       - "traefik.http.routers.nexocloud-tablica-api.entrypoints=websecure"
       - "traefik.http.routers.nexocloud-tablica-api.tls.certresolver=cf"
+      - "traefik.http.routers.nexocloud-tablica-api.priority=10"
       - "traefik.http.routers.nexocloud-tablica-api.service=nexocloud-tablica-api"
       - "traefik.http.services.nexocloud-tablica-api.loadbalancer.server.port=5858"
 
