@@ -9,9 +9,15 @@ import {
 } from 'tldraw'
 import 'tldraw/tldraw.css'
 
-// In production, the server is on the same host.
-// In dev, Vite proxies /connect, /uploads, /unfurl to the backend.
-const WORKER_URL = ``
+// Build full URLs from current location — works in both dev (Vite proxy) and production
+function getBaseHttpUrl(): string {
+    return `${window.location.protocol}//${window.location.host}`
+}
+
+function getWsUrl(path: string): string {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+    return `${protocol}//${window.location.host}${path}`
+}
 
 // Room ID — you can make this dynamic (e.g. from URL path)
 const roomId = 'tablica-ewcia'
@@ -19,8 +25,8 @@ const roomId = 'tablica-ewcia'
 function App() {
     // Create a store connected to multiplayer.
     const store = useSync({
-        // WebSocket URI for the sync server
-        uri: `${WORKER_URL}/connect/${roomId}`,
+        // Full WebSocket URI for the sync server
+        uri: getWsUrl(`/connect/${roomId}`),
         // How to handle static assets like images & videos
         assets: multiplayerAssets,
     })
@@ -45,7 +51,7 @@ const multiplayerAssets: TLAssetStore = {
     async upload(_asset, file) {
         const id = uniqueId()
         const objectName = `${id}-${file.name}`
-        const url = `${WORKER_URL}/uploads/${encodeURIComponent(objectName)}`
+        const url = `${getBaseHttpUrl()}/uploads/${encodeURIComponent(objectName)}`
 
         const response = await fetch(url, {
             method: 'PUT',
@@ -80,7 +86,7 @@ async function unfurlBookmarkUrl({ url }: { url: string }): Promise<TLBookmarkAs
     }
 
     try {
-        const response = await fetch(`${WORKER_URL}/unfurl?url=${encodeURIComponent(url)}`)
+        const response = await fetch(`${getBaseHttpUrl()}/unfurl?url=${encodeURIComponent(url)}`)
         const data = await response.json()
 
         asset.props.description = data?.description ?? ''
