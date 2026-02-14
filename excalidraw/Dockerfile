@@ -15,9 +15,8 @@ ARG NODE_ENV=production
 ARG VITE_APP_WS_SERVER_URL=https://tablica-ws.nexocloud.pl
 ENV VITE_APP_WS_SERVER_URL=${VITE_APP_WS_SERVER_URL}
 
-# Disable tracking and unnecessary services
+# Disable tracking
 ENV VITE_APP_ENABLE_TRACKING=false
-ENV VITE_APP_FIREBASE_CONFIG={}
 
 RUN npm_config_target_arch=${TARGETARCH} yarn build:app:docker
 
